@@ -1,16 +1,19 @@
- # -------------------------------------------------------------------
- #            Arquivo: Makefile
- # -------------------------------------------------------------------
- #              Autor: Bruno Müller Junior
- #               Data: 08/2007
- #      Atualizado em: [09/08/2020, 19h:01m]
- #
- # -------------------------------------------------------------------
+# Makefile: build do programa
 
-$DEPURA=1
+# Autores:
+# Isadora Botassari GRR20206872
+# Victor Ribeiro Garcia GRR20203954
 
-compilador: lex.yy.c compilador.tab.c compilador.o compilador.h tabela_simbolos.c pilha_string.c pilha_int.c
-	gcc lex.yy.c tabela_simbolos.c pilha_string.c pilha_int.c compilador.tab.c compilador.o -o compilador -ll -ly -lc
+CC=gcc
+
+all: clean compilador
+
+debug: clean flags compilador
+flags:
+	$(eval CFLAGS += -DDEPURACAO)
+
+compilador: lex.yy.c compilador.tab.c compiladorF.o tab_simb.o pilha.o compilador.h
+	gcc lex.yy.c compilador.tab.c compiladorF.o tab_simb.o pilha.o -o compilador -ll -ly -lc
 
 lex.yy.c: compilador.l compilador.h
 	flex compilador.l
@@ -18,8 +21,11 @@ lex.yy.c: compilador.l compilador.h
 compilador.tab.c: compilador.y compilador.h
 	bison compilador.y -d -v
 
-compilador.o : compilador.h compiladorF.c
-	gcc -c compiladorF.c -o compilador.o
+compiladorF.o : compilador.h compiladorF.c
+
+tab_simb.o : compilador.h tab_simb.c
+
+pilha.o : compilador.h pilha.c
 
 clean :
-	rm -f compilador.tab.* lex.yy.c compilador.o compilador
+	rm -f compilador.tab.* lex.yy.c *.o compilador compilador.output MEPA
