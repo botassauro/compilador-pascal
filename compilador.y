@@ -11,7 +11,6 @@
 * Motivo: Trabalho de Compiladores (CI1211)
 *
 ***********************************************************************/
-
 %{
 
 #include "compilador.h"
@@ -22,7 +21,7 @@
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 
-%token LABEL TYPE ARRAY OF PROCEDURE FUNCTION
+%token LABEL TYPE ARRAY OF PROCEDURE FUNCTION FORWARD
 %token IF THEN ELSE WHILE DO
 %token IGUAL DIFERENTE MENOR MENOR_IGUAL MAIOR_IGUAL MAIOR
 %token MAIS MENOS VEZES DIVIDIDO
@@ -99,8 +98,7 @@ declara_subrotinas   :  declara_subrotinas declara_procedimento PONTO_E_VIRGULA
 // 12. regra declaracao de procedimento
 declara_procedimento :  PROCEDURE IDENT
                         { insere_novo_proc(); }
-                        param_formais PONTO_E_VIRGULA bloco
-                        { finaliza_declara_proc(); }
+                        param_formais PONTO_E_VIRGULA forward
 ;
 
 // 13. regra declaracao de funcao
@@ -108,15 +106,43 @@ declara_funcao :  FUNCTION IDENT
                   { insere_nova_func(); }
                   param_formais DOIS_PONTOS tipo
                   { insere_retorno_func(); }
-                  PONTO_E_VIRGULA bloco
-                  { finaliza_declara_func(); }
+                  PONTO_E_VIRGULA forward
+;
+
+forward: FORWARD
+         { nivel_lexico--; }
+         |
+         {
+            char enpr[TAM_ID];
+            sprintf(enpr, "ENPR %i", ts.tabela[indice_proc].nivel_lexico);
+
+            if(topo_pil(&pil_eh_funcao)) {
+               funcao_t *atrib = ts.tabela[indice_proc].atrib_vars;
+               geraCodigo(atrib->rot_interno, enpr);
+            } else {
+               procedimento_t *atrib = ts.tabela[indice_proc].atrib_vars;
+               geraCodigo(atrib->rot_interno, enpr);
+            }
+         }
+         bloco
+         {
+            if(topo_pil(&pil_eh_funcao))
+               finaliza_declara_func();
+            else
+               finaliza_declara_proc();
+            desempilha(&pil_eh_funcao, 1);
+         }
 ;
 
 // 14. regra parametros formais
 param_formais  :  { num_params = 0; }
-                  ABRE_PARENTESES secao_param FECHA_PARENTESES
+                  ABRE_PARENTESES fatora_param_formais
                   { finaliza_declara_params(); }
                   |
+;
+
+fatora_param_formais :  secao_param FECHA_PARENTESES
+                        | FECHA_PARENTESES
 ;
 
 // 15. regra secao de parametros formais
@@ -142,8 +168,8 @@ comando_composto  :  T_BEGIN comandos T_END
                      | T_BEGIN T_END
 ;
 
-comandos :  comandos PONTO_E_VIRGULA comando 
-            | comando
+comandos :  comandos comando PONTO_E_VIRGULA 
+            | comando PONTO_E_VIRGULA
 ;
 
 // 17. regra comando
@@ -179,8 +205,12 @@ atribuicao  :  expressao
 ;
 
 // 20. regra chamada de procedimento
-chamada_procedimento :  ABRE_PARENTESES lista_expressoes FECHA_PARENTESES
+chamada_procedimento :  ABRE_PARENTESES fatora_cham_proc
                         |
+;
+
+fatora_cham_proc :   lista_expressoes FECHA_PARENTESES
+                     | FECHA_PARENTESES
 ;
 
 // 22. regra comando condicional
@@ -322,8 +352,12 @@ variavel :  { carrega_variavel(); }
 
 // 31. regra chamada de funcao
 chamada_funcao_com_params :   { inicializa_cham_func(); }  
-                              ABRE_PARENTESES lista_expressoes FECHA_PARENTESES
+                              ABRE_PARENTESES fatora_cham_func_com_params
                               { finaliza_cham_func(); }  
+;
+
+fatora_cham_func_com_params   :  lista_expressoes FECHA_PARENTESES
+                                 | FECHA_PARENTESES
 ;
 
 // 32. regra numero
@@ -378,6 +412,7 @@ int main (int argc, char** argv) {
    inicializa_pil(&pil_proc);
    inicializa_pil(&pil_expr);
    inicializa_pil(&pil_num_params);
+   inicializa_pil(&pil_eh_funcao);
 
    yyin=fp;
    yyparse();
