@@ -212,13 +212,6 @@ write {
     return WRITE;
 }
 
-goto { 
-    simbolo = simb_goto;
-    strncpy (token, yytext, TAM_TOKEN);
-    IMPRIME("goto  ");
-    return GOTO;
-}
-
 \+ { 
     simbolo = simb_soma;
     strncpy (token, yytext, TAM_TOKEN);

@@ -51,7 +51,7 @@ pilha_str rotulos;
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 %token LABEL PROCEDURE FUNCTION OF TYPE
-%token TRUE FALSE IF THEN ELSE WHILE DO GOTO
+%token TRUE FALSE IF THEN ELSE WHILE DO
 %token READ WRITE OR AND NOT
 %token SOMA SUBT MULT DIVI
 %token MENOR MAIOR IGUAL MENORIG MAIORIG
@@ -99,7 +99,6 @@ definicoes_bloco:
    parte_declara_rotulos
    parte_define_tipos
    parte_declara_vars
-
    parte_declara_sub_rotinas
 
 ;
